@@ -9,7 +9,7 @@ public class StateManager {
 	public final String EDIT= "editor";
 	public final String SELECT="selection";
 	public final String HELP ="help";
-	public String previousState;
+	public String previousState,packingType;
 	public int currentZ = 1;
 	public ArrayList<Integer> viewableLayers = new ArrayList<Integer>();
 	public ArrayList<JCheckBox> cbList;
@@ -37,6 +37,12 @@ public class StateManager {
 				previousState=EDIT;
 			helpPage=true;
 		}
+	}
+	public void setPackingType(String type){
+		packingType = type;
+	}
+	public String getPackingType(){
+		return packingType;
 	}
 	public void toggleHelpPage(){
 		if(helpPage){

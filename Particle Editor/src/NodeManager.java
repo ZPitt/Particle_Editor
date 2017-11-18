@@ -6,22 +6,22 @@ public class NodeManager {
 	public ArrayList<Node> nodeList = new ArrayList<Node>();
 	public ArrayList<Edge>	edgeList = new ArrayList<Edge>();
 	public ArrayList<Electrode>electrodeList = new ArrayList<Electrode>();
-	public boolean nodeSelected;
+	public boolean nodeSelected,snapping;
 	public boolean activeGhost = true;
 	public ViewPort vp = new ViewPort(new Dimension(0,0));
 	public int nodeSize,dragNodeIndex,totalSelected;
-	public Location wPoint,desiredLoc,ghostPoint,menuLocation;
+	public double xInterval,yInterval,layerHeight;
+	public Location wPoint,desiredLoc,ghostPoint,menuLocation,layerOffset;
 	public Node ghostNode;
 	public StateManager sm;
 	public final String GROUND = "ground";
 	public final String SOURCE = "source";
 	public final String NONE = "none";
 	
+	
 	public NodeManager(int ns){
 		nodeSize = ns;
 		ghostNode = new Node(0,0,0);
-		
-		
 	}
 	public void addStateManager(StateManager stateManager){
 		sm=stateManager;
@@ -33,16 +33,52 @@ public class NodeManager {
 		return ghostNode;
 	}
 	public void updateGhost(Location cursorLoc){
-		ghostPoint = cursorLoc;
-    	desiredLoc = new Location(ghostNode.newLocation(cursorLoc));
-		if(validMoveGhost(desiredLoc)){
-			ghostNode.setLoc(desiredLoc);
-			updateNeighborList(ghostNode);
+		if(snapping)
+			chooseClosestSnap(cursorLoc);
+		else{
+			ghostPoint = cursorLoc;
+			desiredLoc = new Location(ghostNode.newLocation(cursorLoc));
+			
+			if(validMoveGhost(desiredLoc)){
+				ghostNode.setLoc(desiredLoc);
+				updateNeighborList(ghostNode);
+			}
+			else if(validMoveGhost(cursorLoc)){
+				ghostNode.setLoc(cursorLoc);
+				ghostNode.setDragOffset(ghostNode.getLoc());
+				activeGhost = true; //prevents from adding nodes after already putting one down in same location
+			}
 		}
-		else if(validMoveGhost(cursorLoc)){
-			ghostNode.setLoc(cursorLoc);
-			ghostNode.setDragOffset(ghostNode.getLoc());
-			activeGhost = true; //prevents from adding nodes after already putting one down in same location
+	}
+	public void chooseClosestSnap(Location cursorLoc){
+		double x1 = Math.round(cursorLoc.x/xInterval)*xInterval+layerOffset.x;
+		double x2 = roundOpposite(cursorLoc.x/xInterval)*xInterval+layerOffset.x;
+		double y1 = Math.round(cursorLoc.y/yInterval)*yInterval+layerOffset.y;
+		double y2 = roundOpposite(cursorLoc.y/yInterval)*yInterval+layerOffset.y;
+		Location loc = new Location(x1,y1);
+		if(validMoveGhost(loc)){
+			ghostNode.setLoc(loc);
+			updateNeighborList(ghostNode);
+			activeGhost = true;
+		}
+		else{
+			loc = new Location(x1,y2);
+			Location loc2 = new Location(x2,y2);
+			if(loc.distanceTo(cursorLoc)<=loc2.distanceTo(cursorLoc) && validMoveGhost(loc)){
+				ghostNode.setLoc(loc);
+				updateNeighborList(ghostNode);
+				activeGhost = true;
+			}
+			else if(validMoveGhost(loc2)){
+				ghostNode.setLoc(loc2);
+				updateNeighborList(ghostNode);
+				activeGhost = true;
+			}
+			else if(validMoveGhost(new Location(x2,y2))){
+				ghostNode.setLoc(new Location(x2,y2));
+				updateNeighborList(ghostNode);
+				activeGhost = true;
+			}
 		}
 	}
 	public boolean validMoveGhost(Location l){
@@ -88,8 +124,6 @@ public class NodeManager {
     				break;
     			}
     	}
-    	
-    	
     }
     public boolean checkSelectHover(Location worldPoint){
     	//input has to be in world coordinates
@@ -101,7 +135,6 @@ public class NodeManager {
     		}
     	}
     	//check the electrodes
-    	
     	return false; 
     }
     public void mouseOverEffects(Location worldPoint)
@@ -136,7 +169,6 @@ public class NodeManager {
     }
     public void dragNode(Location worldPoint)
     {
-    	
     	Node n = nodeList.get(dragNodeIndex);
     	wPoint = worldPoint;
     	desiredLoc = new Location(n.newLocation(worldPoint));
@@ -144,7 +176,6 @@ public class NodeManager {
     		n.moveNode(desiredLoc);
     		updateNeighborList(n);
     	}
-    	
     }
     
     public boolean validMove(Location l, int layer){
@@ -287,7 +318,6 @@ public class NodeManager {
     				break;
     			}
     		}
-    		
     	}
     	else if(totalSelected==2){
     		for(int i=0;i<nodeList.size();i++){
@@ -315,21 +345,44 @@ public class NodeManager {
     }
     public void removeAllEdgesFromNode(Node n){
     	
-    	System.out.println(n.getEdgeList().size());
 		for(int i=0;i<n.getEdgeList().size();i++)
 		{
 			edgeList.remove(n.getEdgeList().get(i));
 			
 			for(int j=0;j<nodeList.size();j++){
 				if(!nodeList.get(j).selected){
-					System.out.println(j);
 					nodeList.get(j).removeEdge(n.getEdgeList().get(i));
 				}
 	    	}
 			
 		}
-		System.out.println(" check it");
 		n.getEdgeList().clear();
+    }
+    public double roundOpposite(double a){
+		double b = Math.round(a);
+    	if(a<b)
+    		a=b-1;
+    	else
+    		a=b+1;
+    	return a;
+    }
+    public void snapping(boolean isSnap){
+    	String packingType = sm.getPackingType();
+    	if(packingType.equals("Cubic")){
+    		layerHeight=nodeSize;
+    		xInterval=nodeSize;
+    		yInterval=nodeSize;
+    		layerOffset= new Location(0,0); 
+    	}
+    	else if(packingType.equals("FCC")){
+    		System.out.println("FCC");
+    	}
+    	else if(packingType.equals("BCC")){
+    		xInterval=nodeSize/2*Math.pow(3.0, 0.5);
+    		yInterval=nodeSize/2;
+    		layerOffset= new Location(0,0); 
+    	}
+    	snapping = isSnap;
     }
     public ArrayList<Edge> getEdges(){
     	return edgeList;
@@ -382,9 +435,11 @@ public class NodeManager {
 	    	}
     	}
     }
+    public ArrayList<Node> getNodes(){
+    	return nodeList;
+    }
     public void setMenuLocation(Location menuLoc){
     	menuLocation = menuLoc;
-    	System.out.println(menuLoc.x+", "+menuLoc.y);
     }
     public int getNeighborListSize(Node n){
     	return n.getNeighborList().size();
@@ -404,7 +459,7 @@ public class NodeManager {
     	}
     	
     	for(Node n :nodeList){
-    		if(n.x+10<=xMax){
+    		if(n.x-10<=xMax){
     			n.setSourced(true);
     		}
     	}
@@ -417,14 +472,13 @@ public class NodeManager {
     		}
     	}
     	for(Node n :nodeList){
-    		if(n.getLoc().x-10>=xMin)
+    		if(n.getLoc().x+10>=xMin)
     			n.setGrounded(true);
     	}
     }
     public void clearAllNodes(){
     	for(Node n:nodeList){
-    		n.setGrounded(false);
-    		n.setSourced(false);
+    		n.setNormal();
     	}
     }
     public void sourceNode(){
@@ -442,8 +496,7 @@ public class NodeManager {
     public void clearNode(){
     	for(Node n:nodeList){
     		if(n.selected){
-    			n.setGrounded(false);
-    			n.setSourced(false);
+    			n.setNormal();
     		}
     	}
     }

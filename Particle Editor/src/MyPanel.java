@@ -15,13 +15,17 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 
 class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotionListener, MouseWheelListener, ItemListener{
@@ -53,8 +57,20 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     public ArrayList<JCheckBox> checkBoxList = new ArrayList<JCheckBox>();
     JCheckBox checkBox;
     JPanel checkBoxPanel;
+    JTextArea log;
+    JFileChooser fc;
+    CsvFileWriter fw;
+    public String dir = System.getProperty("user.home")+"\\";
+    public String ext = "csv";
+    public String packingType;
+	static private final String newline = "\n";
     
     public MyPanel(){
+    	fw = new CsvFileWriter();
+    	fc = new JFileChooser();
+    	FileNameExtensionFilter filter = new FileNameExtensionFilter( "CSV files (*csv)", "csv");
+    	fc.setFileFilter(filter);
+    	
     	FlowLayout experimentLayout = new FlowLayout();
     	experimentLayout.setAlignment(FlowLayout.LEFT);
     	experimentLayout.setHgap(5);
@@ -175,9 +191,6 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
 //	    	g.drawRect(groundPoint.x-(int)(eWidth/2/scale), groundPoint.y-(int)(eHeight/2/scale),(int)(eWidth/scale), (int)(eHeight/scale));
 //	    	g.drawRect(sourcePoint.x-(int)(eWidth/2/scale), sourcePoint.y-(int)(eHeight/2/scale),(int)(eWidth/scale), (int)(eHeight/scale));
     	}
-    	
-    	
-    	
     	//starts on lowest layer then moves up.
     	for(int k=0;k<sm.getVisibleLayers().size();k++){
     		int drawingLayer = sm.getVisibleLayers().get(k);
@@ -202,7 +215,15 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
         			if(n.getLayer()==drawingLayer){
 	        			Point p = viewPort.convertToViewport2(n.getLoc());
 	        			//color of node
-	        			if(n.grounded){
+	        			if(n.grounded && n.sourced){
+		        			
+	        				if(drawingLayer<Z){g.setColor((new Color(165,42,42,120)));}
+	        				else if(drawingLayer>Z){g.setColor((new Color(165,42,42)));}
+	        				else
+	        					g.setColor((new Color(165,42,42,200)));
+	        				
+	        			}
+	        			else if(n.grounded){
 	        				if(drawingLayer<Z){g.setColor(new Color(50,50,50,175));}
 	        				else if(drawingLayer>Z){g.setColor(new Color(100,100,100,150));}
 	        				else
@@ -250,7 +271,7 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
         	}
     	}
     	//draws the edges
-    	if(showEdges){
+    	if(showEdges && !sm.helpPage){
 	    	for(int i=0;i<nm.getEdges().size();i++){
 	    		if(edgesOnSelected){
 	    			if(nm.getEdges().get(i).containsSelectedNode()){
@@ -353,7 +374,9 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
 		else if(drawingLayer>Z){g.setColor(new Color(230,230,230,150));}
 		else{
 			g.setColor(Color.WHITE);
-			if(n.grounded)
+			if(n.grounded && n.sourced)
+				g.setColor(new Color(165,42,42,200));
+			else if(n.grounded)
 				g.setColor(Color.BLACK);
 			else if(n.sourced)
 				g.setColor(Color.RED);
@@ -373,12 +396,17 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     //commands coming mostly from button presses
     public void shift(String state){
     	if(state.compareTo("DOWN")==0){
+    		nm.snapping(true);
     		shiftUp=false;
     	}
     	else if(state.compareTo("UP")==0)
     	{
+    		nm.snapping(false);
     		shiftUp=true;
     	}
+    }
+    public void setPackingType(String type){
+    	packingType=type;
     }
     public void moveLayer(String direction){
     	if(direction.compareTo("UP")==0){
@@ -448,7 +476,38 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     }
     
     //mostly functions triggered by key strokes from here
-    
+    public void save(String name){
+    	String fileName = dir + name;
+    	fc.setSelectedFile(new File(fileName));
+        int returnVal = fc.showSaveDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            String newPath = fixPath(file.getAbsolutePath());
+            System.out.println("Write CSV file: "+ file.getAbsolutePath());
+    		fw.writeCsvFile(newPath,nm.getEdges(),nm.getNodes());
+            //This is where a real application would save the file.
+            //log.append("Saved: " + file.getName() + "." + newline);
+        } else {
+            //log.append("Save cancelled." + newline);
+        }
+        	//log.setCaretPosition(log.getDocument().getLength());
+    }
+    public String fixPath(String path){
+    	
+    	int i = path.lastIndexOf('.');
+		if (i > 0) {
+		   String extension = path.substring(i+1);
+		   if(!extension.equals(ext)){
+			   path=path.substring(0, i+1)+ext;
+		   }
+		}
+		if(i==-1){
+			path=path+"."+ext;
+		}
+		i = path.lastIndexOf("\\");
+		dir = path.substring(0,i+1);
+    	return path;
+    }
     public void layerView(String s){
     	if(s.equals("DOWN")){
     		sm.viewLowerLevels(shiftUp);

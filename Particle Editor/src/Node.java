@@ -6,7 +6,7 @@ public class Node {
 	double x,y,z;
 	public int layerZ;
 	Location loc,dragOffset,desiredLoc;
-	public boolean hoverOver, neighborToSelected,neighborToGhost,selected,grounded,sourced;
+	public boolean hoverOver, neighborToSelected,neighborToGhost,selected,grounded,sourced,sourceSaved,groundSaved;
 	public int dragX,dragY;
 	public Dimension size;
 	public ArrayList<Edge> edges = new ArrayList<Edge>();
@@ -35,6 +35,16 @@ public class Node {
 	}
 	public int getLayer(){
 		return layerZ;
+	}
+	public void savedSource(){
+		sourceSaved=true;
+	}
+	public void savedGround(){
+		groundSaved=true;
+	}
+	public void resetSaves(){
+		groundSaved=false;
+		sourceSaved=false;
 	}
 	public Location getLoc()
 	{
@@ -74,11 +84,9 @@ public class Node {
 	}
 	public void setGrounded(boolean tf){
 		grounded=tf;
-		sourced=false;
 	}
 	public void setSourced(boolean tf){
 		sourced=tf;
-		grounded=false;
 	}
 	public void setNormal(){
 		sourced=false;

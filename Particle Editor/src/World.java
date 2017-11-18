@@ -21,12 +21,12 @@ public class World extends JPanel implements ActionListener, DocumentListener
 	private final static int OPTIONS_WIDTH = 150;
 	public JButton addLayer,removeLayer,save,helpPage,moveDown,moveUp,edgeDisplay,
 		edgeOnSelect,ground,source,clear;
+	public JTextField autoName;
+	public JComboBox<String> packingBox;
 	public MyPanel graphicsPanel;
 	String[] packingOptions = {"None","Cubic", "BCC", "FCC"};
-	JTextArea log;
-    JFileChooser fc;
-	String fileName = System.getProperty("user.home")+"\\particleMatrix.csv";
-	static private final String newline = "\n";
+	
+	
 	
     public static void main(String[] args) {
     	try {
@@ -63,7 +63,7 @@ public class World extends JPanel implements ActionListener, DocumentListener
     }
 
     public World(MyPanel newPanel) {
-    	fc = new JFileChooser();
+    	
     	
     	graphicsPanel = newPanel;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -109,18 +109,23 @@ public class World extends JPanel implements ActionListener, DocumentListener
         label.setMaximumSize(new Dimension(Integer.MAX_VALUE,label.getMinimumSize().height));
         add(label);
         
-        JComboBox<String> packingBox = new JComboBox<String>(packingOptions);
+        packingBox = new JComboBox<String>(packingOptions);
         packingBox.setSelectedIndex(1);
-        
+        newPanel.sm.setPackingType((String)packingBox.getSelectedItem());
         packingBox.setMaximumSize(new Dimension(200, packingBox.getMinimumSize().height));
         packingBox.setAlignmentX(LEFT_ALIGNMENT);
         packingBox.addActionListener(this);
         add(packingBox);
         
-        JTextField textField = new JTextField();
+        label = new JLabel("File Name:");
+        label.setMaximumSize(new Dimension(Integer.MAX_VALUE,label.getMinimumSize().height));
+        add(label);
+        
+        autoName = new JTextField();
         //textField.setPreferredSize(...);
-        textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, textField.getMinimumSize().height));
-        add(textField);
+        autoName.setText("particle1.csv");
+        autoName.setMaximumSize(new Dimension(Integer.MAX_VALUE, autoName.getMinimumSize().height));
+        add(autoName);
         
         source = new JButton("Source Left of Selected");
         //label.setPreferredSize(...);
@@ -208,18 +213,7 @@ public class World extends JPanel implements ActionListener, DocumentListener
 		//save file
 		//Handle save button action.
 		if (e.getSource() == save) {
-        	fc.setSelectedFile(new File(fileName));
-            int returnVal = fc.showSaveDialog(null);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                System.out.println("Write CSV file:");
-        		//CsvFileWriter.writeCsvFile(file.getAbsolutePath());
-                //This is where a real application would save the file.
-                //log.append("Saved: " + file.getName() + "." + newline);
-            } else {
-                //log.append("Save cancelled." + newline);
-            }
-            	//log.setCaretPosition(log.getDocument().getLength());
+        	graphicsPanel.save(autoName.getText());
 		}
 		else if(s.equals(source)){
 			graphicsPanel.nm.sourceLeft();
@@ -232,6 +226,9 @@ public class World extends JPanel implements ActionListener, DocumentListener
 		else if(s.equals(clear)){
 			graphicsPanel.nm.clearAllNodes();
 			graphicsPanel.repaint();
+		}
+		else if(s.equals(packingBox)){
+			graphicsPanel.sm.setPackingType((String)packingBox.getSelectedItem());
 		}
 	}
 	

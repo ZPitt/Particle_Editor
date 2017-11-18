@@ -132,7 +132,7 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     	hotkeyListA[19]="'G'";
     	
     	hotkeyListB[0]="-- Deletes selected node";
-    	hotkeyListB[1]="-- *NOT IMPLEMENTED*Pins the ghost node to the closest spot (if eligble) depending on assigned packing type";
+    	hotkeyListB[1]="-- Pins the ghost node to the closest spot depending on assigned packing type";
     	hotkeyListB[2]="-- Shift-clicking can select multiple nodes in 'Selection' Mode";
     	hotkeyListB[3]="-- *NOT IMPLEMENTED*Disables viewing of lower layers (lower with each sequential press)";
     	hotkeyListB[4]="-- *NOT IMPLEMENTED*Disables viewing of higher layers (higher with each sequential press)";
@@ -343,8 +343,8 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     }
     public void drawEdge(Graphics g, int i){
     	Edge e = nm.getEdges().get(i);
-		int connection1 = sm.inCurrentLayers(e.getLayer(1));
-		int connection2 = sm.inCurrentLayers(e.getLayer(2));
+		int connection1 = sm.targetLayerValue(e.getLayer(1));
+		int connection2 = sm.targetLayerValue(e.getLayer(2));
 		if(connection1==-1 || connection2==-1)
 			g.setColor(Color.BLUE);
 		else if(connection1==1 || connection2==1)
@@ -389,7 +389,8 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
 			Node neighbor = n.getNeighborList().get(j);
 			Point neighborVPLoc = viewPort.convertToViewport2(neighbor.getLoc());
 			g.setColor(Color.BLACK);
-			String neighLocs = "Neighbor "+Integer.toString(j+1)+" location: "+Integer.toString(neighborVPLoc.x)+", "+Integer.toString(neighborVPLoc.y);
+			String neighLocs = "Neighbor "+Integer.toString(j+1)+" location: "+Integer.toString(neighborVPLoc.x)+
+					", "+Integer.toString(neighborVPLoc.y)+", "+Integer.toString(neighbor.getLayer());
 			g.drawString(neighLocs, size.width-200, size.height-15*n.getNeighborList().size()+15*(j+1));
 		}
     }
@@ -426,8 +427,10 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     	maxZ-=1;
     	if(maxZ<1)
     		maxZ=1;
-    	else if(Z>maxZ){
-    		nm.removeNodesAtLayer(Z);
+    	else{
+    		nm.removeNodesAtLayer(maxZ+1);
+    	}
+    	if(Z>maxZ){    		
     		Z=maxZ;	
     		sm.setCurrentZ(Z);
     	}

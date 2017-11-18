@@ -34,7 +34,7 @@ public class NodeManager {
 	}
 	public void updateGhost(Location cursorLoc){
 		if(snapping)
-			chooseClosestSnap(cursorLoc);
+			chooseClosestSnap(cursorLoc, ghostNode);
 		else{
 			ghostPoint = cursorLoc;
 			desiredLoc = new Location(ghostNode.newLocation(cursorLoc));
@@ -50,40 +50,65 @@ public class NodeManager {
 			}
 		}
 	}
-	public void chooseClosestSnap(Location cursorLoc){
-		double x1 = Math.round(cursorLoc.x/xInterval)*xInterval+layerOffset.x;
-		double x2 = roundOpposite(cursorLoc.x/xInterval)*xInterval+layerOffset.x;
-		double y1 = Math.round(cursorLoc.y/yInterval)*yInterval+layerOffset.y;
-		double y2 = roundOpposite(cursorLoc.y/yInterval)*yInterval+layerOffset.y;
+	public void chooseClosestSnap(Location cursorLoc, Node n){
+		double x1 = Math.round((cursorLoc.x-layerOffset.x)/xInterval)*xInterval+layerOffset.x;
+		double x2 = roundOpposite((cursorLoc.x-layerOffset.x)/xInterval)*xInterval+layerOffset.x;
+		double y1 = Math.round((cursorLoc.y-layerOffset.y)/yInterval)*yInterval+layerOffset.y;
+		double y2 = roundOpposite((cursorLoc.y-layerOffset.y)/yInterval)*yInterval+layerOffset.y;
 		Location loc = new Location(x1,y1);
-		if(validMoveGhost(loc)){
-			ghostNode.setLoc(loc);
-			updateNeighborList(ghostNode);
-			activeGhost = true;
+		if(n.equals(ghostNode)){
+			if(validMoveGhost(loc)){
+				n.setLoc(loc);
+				updateNeighborList(n);
+					activeGhost = true;
+			}
+			else{
+				loc = new Location(x1,y2);
+				Location loc2 = new Location(x2,y2);
+				if(loc.distanceTo(cursorLoc)<=loc2.distanceTo(cursorLoc) && validMoveGhost(loc)){
+					n.setLoc(loc);
+					updateNeighborList(n);
+					activeGhost = true;
+				}
+				else if(validMoveGhost(loc2)){
+					n.setLoc(loc2);
+					updateNeighborList(n);
+					activeGhost = true;
+				}
+				else if(validMoveGhost(new Location(x2,y2))){
+					n.setLoc(new Location(x2,y2));
+					updateNeighborList(ghostNode);
+					activeGhost = true;
+				}
+			}
 		}
 		else{
-			loc = new Location(x1,y2);
-			Location loc2 = new Location(x2,y2);
-			if(loc.distanceTo(cursorLoc)<=loc2.distanceTo(cursorLoc) && validMoveGhost(loc)){
-				ghostNode.setLoc(loc);
-				updateNeighborList(ghostNode);
-				activeGhost = true;
+			int layer = n.getLayer();
+			if(validMove(loc,layer)){
+				n.setLoc(loc);
+				updateNeighborList(n);
 			}
-			else if(validMoveGhost(loc2)){
-				ghostNode.setLoc(loc2);
-				updateNeighborList(ghostNode);
-				activeGhost = true;
-			}
-			else if(validMoveGhost(new Location(x2,y2))){
-				ghostNode.setLoc(new Location(x2,y2));
-				updateNeighborList(ghostNode);
-				activeGhost = true;
+			else{
+				loc = new Location(x1,y2);
+				Location loc2 = new Location(x2,y2);
+				if(loc.distanceTo(cursorLoc)<=loc2.distanceTo(cursorLoc) && validMove(loc,layer)){
+					n.setLoc(loc);
+					updateNeighborList(n);
+				}
+				else if(validMove(loc2,layer)){
+					n.setLoc(loc2);
+					updateNeighborList(n);
+				}
+				else if(validMove(new Location(x2,y2),layer)){
+					n.setLoc(new Location(x2,y2));
+					updateNeighborList(ghostNode);
+				}
 			}
 		}
 	}
 	public boolean validMoveGhost(Location l){
     	for(int i=0;i<nodeList.size();i++){
-    		if(nodeList.get(i).getLoc().distanceTo(l)<nodeSize && nodeList.get(i).getLayer()==sm.currentZ){
+    		if(nodeList.get(i).getLoc().distanceTo(l)<nodeSize-1 && nodeList.get(i).getLayer()==sm.currentZ){
     			ghostNode.setDragOffset(ghostPoint);
     			return false;
     		}
@@ -170,11 +195,16 @@ public class NodeManager {
     public void dragNode(Location worldPoint)
     {
     	Node n = nodeList.get(dragNodeIndex);
-    	wPoint = worldPoint;
-    	desiredLoc = new Location(n.newLocation(worldPoint));
-    	if(validMove(desiredLoc,n.getLayer())){
-    		n.moveNode(desiredLoc);
-    		updateNeighborList(n);
+    	if(snapping){
+    		chooseClosestSnap(worldPoint,n);
+    	}
+    	else{
+	    	wPoint = worldPoint;
+	    	desiredLoc = new Location(n.newLocation(worldPoint));
+	    	if(validMove(desiredLoc,n.getLayer())){
+	    		n.moveNode(desiredLoc);
+	    		updateNeighborList(n);
+	    	}
     	}
     }
     
@@ -182,7 +212,7 @@ public class NodeManager {
     	if(layer!=sm.currentZ)
     		return false;
     	for(int i=0;i<nodeList.size();i++){
-    		if(nodeList.get(i).getLoc().distanceTo(l)<nodeSize && i!=dragNodeIndex && nodeList.get(i).getLayer()==layer){
+    		if(nodeList.get(i).getLoc().distanceTo(l)<nodeSize-1 && i!=dragNodeIndex && nodeList.get(i).getLayer()==layer){
     			nodeList.get(dragNodeIndex).setDragOffset(wPoint);
     			return false;
     		}
@@ -204,36 +234,39 @@ public class NodeManager {
     	ArrayList<Node> targetNeighList = targetNode.getNeighborList();
     	
     	for(int i=targetNeighList.size()-1;i>-1;i--){
-    		if(targetNode.getLoc().distanceTo(targetNeighList.get(i).getLoc())>nodeSize+2){
+    		double multiplier = sm.adjacentLayerValue(targetNeighList.get(i).getLayer());
+    		if(targetNode.getLoc().distanceTo(targetNeighList.get(i).getLoc())>nodeSize*multiplier+3){
     			targetNeighList.remove(i);
     		}
     	}
     	//check to see if any new nodes are neighbors
-    	for(int i=0;i<nodeList.size();i++){
+    	for(Node n : nodeList){//int i=0;i<nodeList.size();i++){
     		if(sm.editor)
-    			nodeList.get(i).neighborToGhost=false;
+    			n.neighborToGhost=false;
     		if(sm.selection)
-    			nodeList.get(i).neighborToSelected=false;
-    		if(targetNode.getLoc().distanceTo(nodeList.get(i).getLoc())<nodeSize+2 
-    				&& !targetNode.equals(nodeList.get(i))&& sm.isAdjacentLayer(targetNode,nodeList.get(i))){
+    			n.neighborToSelected=false;
+    		double multiplier = sm.adjacentLayerValue(n.getLayer());
+    		
+    		if(targetNode.getLoc().distanceTo(n.getLoc())<nodeSize*multiplier+3 
+    				&& !targetNode.equals(n)&& sm.isAdjacentLayer(targetNode,n)){
     			//check to not add duplicates
     			boolean duplicateExists=false;
     			for(int j =0;j<targetNeighList.size();j++){
-    				if(targetNeighList.get(j).getLoc().equals(nodeList.get(i).getLoc())){
+    				if(targetNeighList.get(j).getLoc().equals(n.getLoc())){
     					if(sm.editor)
-    						nodeList.get(i).neighborToGhost=true;
+    						n.neighborToGhost=true;
     					if(sm.selection)
-    						nodeList.get(i).neighborToSelected=true;
+    						n.neighborToSelected=true;
     					duplicateExists=true; 
     					break;
     				}
     			}
     			if(!duplicateExists){
     				if(sm.selection)
-    					nodeList.get(i).neighborToSelected=true;
+    					n.neighborToSelected=true;
     				if(sm.editor)
-    					nodeList.get(i).neighborToGhost=true;
-    				targetNode.addNeighbor(nodeList.get(i));
+    					n.neighborToGhost=true;
+    				targetNode.addNeighbor(n);
     			}
     		}
     	}
@@ -375,12 +408,30 @@ public class NodeManager {
     		layerOffset= new Location(0,0); 
     	}
     	else if(packingType.equals("FCC")){
-    		System.out.println("FCC");
+    		xInterval=nodeSize/2*Math.pow(3.0, 0.5);
+    		yInterval=nodeSize/2;
+    		if(sm.currentZ % 3==0){
+    			layerOffset= new Location(nodeSize/(Math.pow(3, 0.5)),nodeSize/2);
+    		}
+    		else if((sm.currentZ%3) % 2==0){
+    			layerOffset = new Location(nodeSize/(2*Math.pow(3, 0.5)),nodeSize/2);
+    		}
+    		else{
+    			layerOffset= new Location(0,0);
+    		}
+    		
+    		 
     	}
     	else if(packingType.equals("BCC")){
     		xInterval=nodeSize/2*Math.pow(3.0, 0.5);
     		yInterval=nodeSize/2;
-    		layerOffset= new Location(0,0); 
+    		if(sm.currentZ % 2==0){
+    			layerOffset = new Location(nodeSize/(2*Math.pow(3, 0.5)),nodeSize/2);
+    		}
+    		else{
+    			layerOffset= new Location(0,0); 
+    		}
+    		
     	}
     	snapping = isSnap;
     }
@@ -446,8 +497,10 @@ public class NodeManager {
     }
     public void removeNodesAtLayer(int layer){
 		for(int i=nodeList.size()-1;i>-1;i--){
-			if(nodeList.get(i).getLayer()==layer)
+			if(nodeList.get(i).getLayer()==layer){
+				removeAllEdgesFromNode(nodeList.get(i));
 				nodeList.remove(i);
+			}
 		}
 	}
     public void sourceLeft(){

@@ -109,6 +109,32 @@ public class StateManager {
 		}
 		return 2;
 	}
+	public int targetLayerValue(int targetLayer){
+		//method returns 2 if the targetLayer does not exist in the viewable layers. Otherwise, returns 0 if targetLayer 
+		//is the same as the current view. Returns 1 if above current Layer, returns -1 if below;
+			if(targetLayer==currentZ) 
+				return 0;
+			else if(targetLayer>currentZ)
+				return 1;
+			else 
+				return -1;
+	}
+	public double adjacentLayerValue(int targetLayer){
+		double multiplier = 1;
+//		//int layerStatus = inCurrentLayers(targetLayer);
+//		if(packingType.equals("Cubic")){
+//			if((targetLayer-currentZ)!=0)
+//				multiplier= 0.20;
+//		}
+//		else{
+//			if((targetLayer-currentZ)!=0)
+//				multiplier= 0.8;
+//		}
+//		
+		if(targetLayer!=currentZ)
+			multiplier=0.8;
+		return multiplier;
+	}
 	public boolean isCurrentLayerVisible(){
 		return viewableLayers.contains(currentZ);
 	}

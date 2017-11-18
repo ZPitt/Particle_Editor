@@ -31,7 +31,6 @@ public class Node {
 		edges.add(newEdge);
 	}
 	public void removeEdge(Edge targetEdge){
-		System.out.println(edges.remove(targetEdge));
 	}
 	public int getLayer(){
 		return layerZ;

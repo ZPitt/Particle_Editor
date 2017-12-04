@@ -313,7 +313,7 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
 			g.drawString(nodeCount, size.width-120, 30);
 			g.drawString(edgeCount, size.width-120, 50);
 			
-			String zLevel = "Current Layer: "+ Integer.toString(Z) +", Current Height: "+Double.toString(Math.round(Z*zMultiplier * 100.0) / 100.0);
+			String zLevel = "Current Layer: "+ Integer.toString(Z) +", Current Height: "+Double.toString(Math.round(Z*nm.layerHeight)/ 100.0);
 			g.drawString(zLevel,size.width/2-g.getFontMetrics().stringWidth(zLevel)/2,10);
 			
 			
@@ -407,6 +407,7 @@ class MyPanel extends JPanel implements ActionListener,MouseListener,MouseMotion
     	}
     }
     public void setPackingType(String type){
+    	nm.updateLayerHeights(type);
     	packingType=type;
     }
     public void moveLayer(String direction){

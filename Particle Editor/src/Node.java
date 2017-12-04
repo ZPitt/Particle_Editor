@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 
 public class Node {
-	double x,y,z;
+	double x,y,z,layerHeight;
 	public int layerZ;
 	Location loc,dragOffset,desiredLoc;
 	public boolean hoverOver, neighborToSelected,neighborToGhost,selected,grounded,sourced,sourceSaved,groundSaved;
@@ -20,6 +20,14 @@ public class Node {
 		x=xLoc;
 		y=yLoc;
 		layerZ=layer;
+		z = layer*layerHeight;
+	}
+	public void setHeight(double newLayerHeight){
+		layerHeight = newLayerHeight;
+		z = layerZ*layerHeight;
+	}
+	public double getZ(){
+		return z;
 	}
 	public void setSize(Dimension newSize){
 		size = newSize;

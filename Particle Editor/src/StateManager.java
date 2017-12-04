@@ -40,6 +40,7 @@ public class StateManager {
 	}
 	public void setPackingType(String type){
 		packingType = type;
+		
 	}
 	public String getPackingType(){
 		return packingType;

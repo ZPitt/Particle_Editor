@@ -7,7 +7,6 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.File;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,6 +14,10 @@ import javax.swing.event.DocumentListener;
 
 public class World extends JPanel implements ActionListener, DocumentListener
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	static Toolkit tk = Toolkit.getDefaultToolkit();  
 	private final static int HEIGHT = (int)tk.getScreenSize().getHeight();
 	private final static int WIDTH  = (int)tk.getScreenSize().getWidth();
@@ -24,7 +27,7 @@ public class World extends JPanel implements ActionListener, DocumentListener
 	public JTextField autoName;
 	public JComboBox<String> packingBox;
 	public MyPanel graphicsPanel;
-	String[] packingOptions = {"None","Cubic", "BCC", "FCC"};
+	String[] packingOptions = {"Cubic", "BCC", "FCC"};
 	
 	
 	
@@ -110,8 +113,9 @@ public class World extends JPanel implements ActionListener, DocumentListener
         add(label);
         
         packingBox = new JComboBox<String>(packingOptions);
-        packingBox.setSelectedIndex(1);
+        packingBox.setSelectedIndex(0);
         newPanel.sm.setPackingType((String)packingBox.getSelectedItem());
+        newPanel.nm.updateLayerHeights((String)packingBox.getSelectedItem());
         packingBox.setMaximumSize(new Dimension(200, packingBox.getMinimumSize().height));
         packingBox.setAlignmentX(LEFT_ALIGNMENT);
         packingBox.addActionListener(this);
@@ -229,31 +233,34 @@ public class World extends JPanel implements ActionListener, DocumentListener
 		}
 		else if(s.equals(packingBox)){
 			graphicsPanel.sm.setPackingType((String)packingBox.getSelectedItem());
+			graphicsPanel.nm.updateLayerHeights((String)packingBox.getSelectedItem());
+			graphicsPanel.repaint();
 		}
 	}
 	
 
 	@Override
 	public void changedUpdate(DocumentEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void insertUpdate(DocumentEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void removeUpdate(DocumentEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	
 }
 class MyFrame extends JFrame {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	public MyPanel panel;
 	public boolean shiftUp = true;
 	public World w;

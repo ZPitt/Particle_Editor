@@ -278,6 +278,7 @@ public class NodeManager {
 	    	addEdges(n);
 	    	nodeList.add(n);
 	    	activeGhost=false;
+	    	n.setHeight(layerHeight);
     	}
     }
     public void updateGhostLayer(int newLayer){
@@ -419,10 +420,9 @@ public class NodeManager {
     		else{
     			layerOffset= new Location(0,0);
     		}
-    		
-    		 
     	}
     	else if(packingType.equals("BCC")){
+    		layerHeight = Math.pow(6,0.5)/3.0;
     		xInterval=nodeSize/2*Math.pow(3.0, 0.5);
     		yInterval=nodeSize/2;
     		if(sm.currentZ % 2==0){
@@ -434,6 +434,16 @@ public class NodeManager {
     		
     	}
     	snapping = isSnap;
+    }
+    public void updateLayerHeights(String packingType){
+    	if(packingType.equals("Cubic"))
+    		layerHeight = nodeSize;
+    	else
+    		layerHeight = nodeSize*Math.pow(6,0.5)/3.0;
+    	for(Node n: nodeList){
+    		n.setHeight(layerHeight);
+    	}
+    	
     }
     public ArrayList<Edge> getEdges(){
     	return edgeList;

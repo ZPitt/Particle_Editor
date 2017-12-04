@@ -34,6 +34,15 @@ public class CsvFileWriter {
 				if(n.grounded)
 					gCount+=1;
 			}
+			//first line tells the MATLAB program where to read the csv file
+			int totalEdges = eList.size()+sCount+gCount;
+			int totalNodes = nList.size()+1; //+1 for the "source node"
+			fileWriter.append(Integer.toString(totalEdges));
+			fileWriter.append(COMMA_DELIMITER);
+			fileWriter.append(Integer.toString(totalNodes));
+			fileWriter.append(COMMA_DELIMITER);
+			fileWriter.append(NEW_LINE_SEPARATOR);
+			
 			for(int i=0;i<sCount;i++){
 				fileWriter.append(Integer.toString(-1));
 				fileWriter.append(COMMA_DELIMITER);
@@ -74,7 +83,7 @@ public class CsvFileWriter {
 			//Write the topology matrix into the fileWriter
 			int topo = -1;
 			for(Edge e : eList){
-				fileWriter.append(Integer.toString(0));
+				fileWriter.append(Integer.toString(0)); // 0 for the "source node"
 				fileWriter.append(COMMA_DELIMITER);
 				for(Node n : nList){
 					if(e.containsNode(n)){
@@ -90,6 +99,21 @@ public class CsvFileWriter {
 				}
 				if(topo==1)
 					System.err.println("TOO MANY OR TOO FEW NODES MATCH THIS EDGE:"+eList.indexOf(e));
+				fileWriter.append(NEW_LINE_SEPARATOR);
+			}
+			//second part writes the x,y,z of each node for rendering purposes
+			for(int i=0;i<3;i++){
+				fileWriter.append(Integer.toString(0));
+				fileWriter.append(COMMA_DELIMITER); //0 coordinates for the "source node"
+				for(Node n:nList){
+					if(i==0)
+						fileWriter.append(Double.toString(n.loc.x));
+					else if(i==1)
+						fileWriter.append(Double.toString(n.loc.y));
+					else
+						fileWriter.append(Double.toString(n.getZ()));
+					fileWriter.append(COMMA_DELIMITER);
+				}
 				fileWriter.append(NEW_LINE_SEPARATOR);
 			}
 			System.out.println("CSV file was created successfully !!!");
